@@ -26,6 +26,7 @@ class TodoForm extends React.Component {
   render() {
     return (
       <form className="todo-form" onSubmit={this.handleSubmit}>
+        <h1>{ this.props.errors }</h1>
         <label>Title:
           <input
             className="input"
@@ -33,7 +34,7 @@ class TodoForm extends React.Component {
             value={this.state.title}
             placeholder="buy milk"
             onChange={this.update('title')}
-            required/>
+            />
         </label>
         <label>Body:
           <textarea
@@ -44,7 +45,7 @@ class TodoForm extends React.Component {
             rows='5'
             placeholder="2% or whatever is on sale!"
             onChange={this.update('body')}
-            required></textarea>
+            ></textarea>
         </label>
         <button className="create-button">Create Todo!</button>
       </form>

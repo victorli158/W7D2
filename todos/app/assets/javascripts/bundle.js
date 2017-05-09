@@ -5035,17 +5035,21 @@ module.exports = function(module) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createTodo = exports.fetchTodos = exports.removeTodo = exports.receiveTodo = exports.receiveTodos = exports.REMOVE_TODO = exports.RECEIVE_TODO = exports.RECEIVE_TODOS = undefined;
+exports.fetchTodos = exports.todoError = exports.removeTodo = exports.receiveTodo = exports.receiveTodos = exports.TODO_ERROR = exports.REMOVE_TODO = exports.RECEIVE_TODO = exports.RECEIVE_TODOS = undefined;
+exports.createTodo = createTodo;
 
 var _todo_api_util = __webpack_require__(130);
 
 var APIUtil = _interopRequireWildcard(_todo_api_util);
+
+var _error_actions = __webpack_require__(333);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 var RECEIVE_TODOS = exports.RECEIVE_TODOS = "RECEIVE_TODOS";
 var RECEIVE_TODO = exports.RECEIVE_TODO = "RECEIVE_TODO";
 var REMOVE_TODO = exports.REMOVE_TODO = "REMOVE_TODO";
+var TODO_ERROR = exports.TODO_ERROR = "TODO_ERROR";
 
 var receiveTodos = exports.receiveTodos = function receiveTodos(todos) {
   return {
@@ -5068,10 +5072,12 @@ var removeTodo = exports.removeTodo = function removeTodo(todo) {
   };
 };
 
-// export const todoError = error => ({
-//   type: TODO_ERROR,
-//   error
-// })
+var todoError = exports.todoError = function todoError(error) {
+  return {
+    type: TODO_ERROR,
+    error: error
+  };
+};
 
 var fetchTodos = exports.fetchTodos = function fetchTodos() {
   return function (dispatch) {
@@ -5081,13 +5087,15 @@ var fetchTodos = exports.fetchTodos = function fetchTodos() {
   };
 };
 
-var createTodo = exports.createTodo = function createTodo(todo) {
+function createTodo(todo) {
   return function (dispatch) {
-    return APIUtil.createTodo(todo).then(function (newtodo) {
-      return dispatch(receiveTodo(newtodo));
+    return APIUtil.createTodo(todo).then(function (newTodo) {
+      return dispatch(receiveTodo(newTodo));
+    }, function (err) {
+      return dispatch((0, _error_actions.receiveErrors)(err.responseJSON));
     });
   };
-};
+}
 
 /***/ }),
 /* 47 */
@@ -12336,6 +12344,11 @@ var TodoForm = function (_React$Component) {
         'form',
         { className: 'todo-form', onSubmit: this.handleSubmit },
         _react2.default.createElement(
+          'h1',
+          null,
+          this.props.errors
+        ),
+        _react2.default.createElement(
           'label',
           null,
           'Title:',
@@ -12344,8 +12357,8 @@ var TodoForm = function (_React$Component) {
             ref: 'title',
             value: this.state.title,
             placeholder: 'buy milk',
-            onChange: this.update('title'),
-            required: true })
+            onChange: this.update('title')
+          })
         ),
         _react2.default.createElement(
           'label',
@@ -12358,8 +12371,8 @@ var TodoForm = function (_React$Component) {
             value: this.state.body,
             rows: '5',
             placeholder: '2% or whatever is on sale!',
-            onChange: this.update('body'),
-            required: true })
+            onChange: this.update('body')
+          })
         ),
         _react2.default.createElement(
           'button',
@@ -12429,7 +12442,8 @@ var TodoList = function (_React$Component) {
     value: function render() {
       var _props = this.props,
           todos = _props.todos,
-          createTodo = _props.createTodo;
+          createTodo = _props.createTodo,
+          errors = _props.errors;
 
       var todoItems = todos.map(function (todo) {
         return _react2.default.createElement(_todo_list_item2.default, {
@@ -12445,7 +12459,7 @@ var TodoList = function (_React$Component) {
           { className: 'todo-list' },
           todoItems
         ),
-        _react2.default.createElement(_todo_form2.default, { createTodo: createTodo })
+        _react2.default.createElement(_todo_form2.default, { createTodo: createTodo, errors: errors })
       );
     }
   }]);
@@ -12482,7 +12496,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var mapStateToProps = function mapStateToProps(state) {
   return {
     todos: (0, _selectors.allTodos)(state),
-    state: state
+    errors: state.errors
   };
 };
 
@@ -12654,11 +12668,16 @@ var _steps_reducer = __webpack_require__(146);
 
 var _steps_reducer2 = _interopRequireDefault(_steps_reducer);
 
+var _error_reducer = __webpack_require__(334);
+
+var _error_reducer2 = _interopRequireDefault(_error_reducer);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var RootReducer = (0, _redux.combineReducers)({
   todos: _todos_reducer2.default,
-  steps: _steps_reducer2.default
+  steps: _steps_reducer2.default,
+  errors: _error_reducer2.default
 });
 
 exports.default = RootReducer;
@@ -28107,6 +28126,63 @@ function symbolObservablePonyfill(root) {
 
 	return result;
 };
+
+/***/ }),
+/* 333 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var CLEAR_ERRORS = exports.CLEAR_ERRORS = "CLEAR_ERRORS";
+var RECEIVE_ERRORS = exports.RECEIVE_ERRORS = "RECEIVE_ERRORS";
+
+var receiveErrors = exports.receiveErrors = function receiveErrors(errors) {
+  return {
+    type: RECEIVE_ERRORS,
+    errors: errors
+  };
+};
+
+var clearErrors = exports.clearErrors = function clearErrors() {
+  return {
+    type: CLEAR_ERRORS
+  };
+};
+
+/***/ }),
+/* 334 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _error_actions = __webpack_require__(333);
+
+var errorReducer = function errorReducer() {
+  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  var action = arguments[1];
+
+  Object.freeze(state);
+
+  switch (action.type) {
+    case _error_actions.RECEIVE_ERRORS:
+      return action.errors;
+    case _error_actions.CLEAR_ERRORS:
+      return [];
+    default:
+      return state;
+  }
+};
+
+exports.default = errorReducer;
 
 /***/ })
 /******/ ]);
