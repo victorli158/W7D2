@@ -5035,8 +5035,9 @@ module.exports = function(module) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.fetchTodos = exports.todoError = exports.removeTodo = exports.receiveTodo = exports.receiveTodos = exports.TODO_ERROR = exports.REMOVE_TODO = exports.RECEIVE_TODO = exports.RECEIVE_TODOS = undefined;
+exports.deleteTodo = exports.fetchTodos = exports.todoError = exports.removeTodo = exports.receiveTodo = exports.receiveTodos = exports.TODO_ERROR = exports.REMOVE_TODO = exports.RECEIVE_TODO = exports.RECEIVE_TODOS = undefined;
 exports.createTodo = createTodo;
+exports.updateTodo = updateTodo;
 
 var _todo_api_util = __webpack_require__(130);
 
@@ -5090,12 +5091,30 @@ var fetchTodos = exports.fetchTodos = function fetchTodos() {
 function createTodo(todo) {
   return function (dispatch) {
     return APIUtil.createTodo(todo).then(function (newTodo) {
+      dispatch(receiveTodo(newTodo));dispatch((0, _error_actions.clearErrors)());
+    }, function (err) {
+      return dispatch((0, _error_actions.receiveErrors)(err.responseJSON));
+    });
+  };
+}
+
+function updateTodo(todo) {
+  return function (dispatch) {
+    return APIUtil.updateTodo(todo).then(function (newTodo) {
       return dispatch(receiveTodo(newTodo));
     }, function (err) {
       return dispatch((0, _error_actions.receiveErrors)(err.responseJSON));
     });
   };
 }
+
+var deleteTodo = exports.deleteTodo = function deleteTodo(todo) {
+  return function (dispatch) {
+    return APIUtil.deleteTodo(todo).then(function (oldTodo) {
+      return dispatch(removeTodo(oldTodo));
+    });
+  };
+};
 
 /***/ }),
 /* 47 */
@@ -11778,6 +11797,21 @@ var createTodo = exports.createTodo = function createTodo(todo) {
   });
 };
 
+var updateTodo = exports.updateTodo = function updateTodo(todo) {
+  return $.ajax({
+    method: "PATCH",
+    url: '/api/todos/' + todo.id,
+    data: { todo: todo }
+  });
+};
+
+var deleteTodo = exports.deleteTodo = function deleteTodo(todo) {
+  return $.ajax({
+    method: "DELETE",
+    url: '/api/todos/' + todo.id
+  });
+};
+
 /***/ }),
 /* 131 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -12261,8 +12295,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var mapDispatchToProps = function mapDispatchToProps(dispatch, _ref) {
   var todo = _ref.todo;
   return {
-    removeTodo: function removeTodo() {
-      return dispatch((0, _todo_actions.removeTodo)(todo));
+    deleteTodo: function deleteTodo() {
+      return dispatch((0, _todo_actions.deleteTodo)(todo));
     }
   };
 };
@@ -12443,12 +12477,14 @@ var TodoList = function (_React$Component) {
       var _props = this.props,
           todos = _props.todos,
           createTodo = _props.createTodo,
-          errors = _props.errors;
+          errors = _props.errors,
+          updateTodo = _props.updateTodo;
 
       var todoItems = todos.map(function (todo) {
         return _react2.default.createElement(_todo_list_item2.default, {
           key: 'todo-list-item' + todo.id,
-          todo: todo });
+          todo: todo,
+          updateTodo: updateTodo });
       });
 
       return _react2.default.createElement(
@@ -12507,8 +12543,10 @@ var mapDispatchToProps = function mapDispatchToProps(dispatch) {
     },
     createTodo: function createTodo(todo) {
       return dispatch((0, _todo_actions.createTodo)(todo));
+    },
+    updateTodo: function updateTodo(todo) {
+      return dispatch((0, _todo_actions.updateTodo)(todo));
     }
-    // receiveTodo: todo => dispatch(receiveTodo(todo))
   };
 };
 
@@ -12573,7 +12611,7 @@ var TodoListItem = function (_React$Component) {
       e.preventDefault();
       var toggledTodo = (0, _merge2.default)({}, this.props.todo, { done: !this.props.todo.done });
 
-      this.props.receiveTodo(toggledTodo);
+      this.props.updateTodo(toggledTodo);
     }
   }, {
     key: 'render',
